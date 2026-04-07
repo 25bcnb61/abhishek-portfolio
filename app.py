@@ -1,6 +1,10 @@
 import os
 from flask import Flask, render_template, request, redirect
 from pymongo import MongoClient
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 app = Flask(__name__)
 
@@ -8,7 +12,7 @@ app = Flask(__name__)
 # Use an environment variable in production, with a local fallback for development.
 MONGO_URI = os.environ.get("MONGO_URI")
 if not MONGO_URI:
-    MONGO_URI = "mongodb+srv://portfolio-admin:YOUR_PASSWORD@cluster0.43cmhyo.mongodb.net/?appName=Cluster0"
+    MONGO_URI = "mongodb+srv://portfolio-admin:<Abhishek@2007>@cluster0.43cmhyo.mongodb.net/?appName=Cluster0"
 
 client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
 messages_col = None
