@@ -1,36 +1,15 @@
 import os
-import psycopg2
 from flask import Flask, render_template, request, redirect
+from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# 1. LIVE CLOUD CONNECTION STRING
-DATABASE_URL = "postgres://avnadmin:AVNS_o_k5-vEisL7P01p5Q9I@pg-10f494c4-portfolio-db-25bcnb61.a.aivencloud.com:22193/defaultdb?sslmode=require"
+# 1. MONGODB CONNECTION (Updated with your URL)
+MONGO_URI = "mongodb+srv://25bcnb61_db_user:Erw5Fyz8_WEfLZY@cluster0.43cmhyo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
-def get_db_connection():
-    # This connects your code (local or on Render) to the Aiven Cloud
-    return psycopg2.connect(DATABASE_URL)
-
-# 2. DATABASE INITIALIZATION
-def init_db():
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        # Creates the table in the Aiven cloud automatically
-        cur.execute('''
-            CREATE TABLE IF NOT EXISTS messages (
-                name TEXT NOT NULL,
-                email TEXT NOT NULL,
-                message TEXT NOT NULL
-            );
-        ''')
-        conn.commit()
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print(f"Database Init Error: {e}")
-
-init_db()
+client = MongoClient(MONGO_URI)
+db = client.portfolio_website
+messages_col = db.messages
 
 portfolio_data = {
     'student_name': 'Abhishek P',
@@ -49,13 +28,12 @@ def submit():
         msg = request.form.get('message')
 
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            # PostgreSQL uses %s for placeholders
-            cur.execute("INSERT INTO messages (name, email, message) VALUES (%s, %s, %s)", (name, email, msg))
-            conn.commit()
-            cur.close()
-            conn.close()
+            # MongoDB Insertion
+            messages_col.insert_one({
+                "name": name, 
+                "email": email, 
+                "message": msg
+            })
             
             return """
             <body style="background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
@@ -72,12 +50,8 @@ def submit():
 @app.route('/view_data')
 def view_data():
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM messages")
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
+        # Retrieve all messages from MongoDB
+        rows = list(messages_col.find())
         
         style = """
         <style>
@@ -105,7 +79,7 @@ def view_data():
         html = style + '<div class="container">'
         html += "<h1>🛰️ DATA_LOG_COLLECTOR</h1><table><tr><th>NAME</th><th>IDENTITY_EMAIL</th><th>TRANSMISSION</th></tr>"
         for row in rows:
-            html += f"<tr><td>{row[0]}</td><td>{row[1]}</td><td>{row[2]}</td></tr>"
+            html += f"<tr><td>{row.get('name')}</td><td>{row.get('email')}</td><td>{row.get('message')}</td></tr>"
         html += "</table><center><a href='/' class='back-btn'>RETURN TO HUB</a></center></div>"
         
         return html
