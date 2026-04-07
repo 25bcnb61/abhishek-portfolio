@@ -4,13 +4,21 @@ from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# 1. MONGODB CONNECTION (Updated with your URL)
-# Replace YOUR_PASSWORD with your actual MongoDB password.
-# If your password contains '@', encode it as '%40'.
-MONGO_URI = "mongodb+srv://portfolio-admin:YOUR_PASSWORD@cluster0.43cmhyo.mongodb.net/?appName=Cluster0"
-client = MongoClient(MONGO_URI)
-db = client.portfolio_website
-messages_col = db.messages
+# 1. MONGODB CONNECTION
+# Use an environment variable in production, with a local fallback for development.
+MONGO_URI = os.environ.get("MONGO_URI")
+if not MONGO_URI:
+    MONGO_URI = "mongodb+srv://portfolio-admin:YOUR_PASSWORD@cluster0.43cmhyo.mongodb.net/?appName=Cluster0"
+
+client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+messages_col = None
+try:
+    client.admin.command("ping")
+    db = client.portfolio_website
+    messages_col = db.messages
+except Exception as e:
+    print(f"MongoDB connection warning: {e}")
+    # continue running the app even if MongoDB is unavailable
 
 portfolio_data = {
     'student_name': 'Abhishek P',
@@ -28,11 +36,14 @@ def submit():
         email = request.form.get('email')
         msg = request.form.get('message')
 
+        if messages_col is None:
+            return "<body style='background:#000; color:#ff6b6b; padding:50px;'><h1>DATABASE_NOT_AVAILABLE</h1><p>The app can run, but MongoDB is not configured or reachable.</p></body>"
+
         try:
             # MongoDB Insertion
             messages_col.insert_one({
-                "name": name, 
-                "email": email, 
+                "name": name,
+                "email": email,
                 "message": msg
             })
             
@@ -50,6 +61,9 @@ def submit():
 
 @app.route('/view_data')
 def view_data():
+    if messages_col is None:
+        return "<body style='background:#000; color:#ff6b6b; padding:50px;'><h1>DATABASE_NOT_AVAILABLE</h1><p>The app can run, but MongoDB is not configured or reachable.</p></body>"
+
     try:
         # Retrieve all messages from MongoDB
         rows = list(messages_col.find())
