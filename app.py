@@ -5,8 +5,9 @@ from pymongo import MongoClient
 app = Flask(__name__)
 
 # 1. MONGODB CONNECTION (Updated with your URL)
-MONGO_URI = "mongodb+srv://25bcnb61_db_user:Erw5Fyz8_WEfLZY@cluster0.43cmhyo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-
+# Replace YOUR_PASSWORD with your actual MongoDB password.
+# If your password contains '@', encode it as '%40'.
+MONGO_URI = "mongodb+srv://portfolio-admin:YOUR_PASSWORD@cluster0.43cmhyo.mongodb.net/?appName=Cluster0"
 client = MongoClient(MONGO_URI)
 db = client.portfolio_website
 messages_col = db.messages
