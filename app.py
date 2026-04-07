@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session
 from pymongo import MongoClient
 
 try:
@@ -10,6 +10,7 @@ except ImportError:
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "your-secret-key-change-in-production")
 
 # 1. MONGODB CONNECTION
 # Use an environment variable in production, with a local fallback for development.
@@ -107,6 +108,62 @@ def view_data():
         return html
     except Exception as e:
         return f"<h1>STORAGE_ACCESS_DENIED: {e}</h1>"
+
+@app.route('/admin')
+def admin():
+    if 'logged_in' in session:
+        return redirect('/admin/dashboard')
+    return '''
+    <html>
+    <head><title>Admin Login</title></head>
+    <body style="background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+        <form method="POST" action="/admin/login" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
+            <h2>Admin Login</h2>
+            <input type="text" name="username" placeholder="Username" required style="display: block; margin: 10px 0; padding: 10px; width: 200px;"><br>
+            <input type="password" name="password" placeholder="Password" required style="display: block; margin: 10px 0; padding: 10px; width: 200px;"><br>
+            <button type="submit" style="padding: 10px 20px; background: #00d2ff; color: white; border: none; border-radius: 5px;">Login</button>
+        </form>
+    </body>
+    </html>
+    '''
+
+@app.route('/admin/login', methods=['POST'])
+def admin_login():
+    username = request.form.get('username')
+    password = request.form.get('password')
+    # Simple auth - change these in production
+    if username == 'admin' and password == 'password':
+        session['logged_in'] = True
+        return redirect('/admin/dashboard')
+    return '<h1>Invalid credentials</h1><a href="/admin">Try again</a>'
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if 'logged_in' not in session:
+        return redirect('/admin')
+    if messages_col is None:
+        return "<h1>DATABASE_NOT_AVAILABLE</h1><p>Cannot access messages.</p><a href='/admin/logout'>Logout</a>"
+    try:
+        rows = list(messages_col.find())
+        html = '''
+        <html>
+        <head><title>Admin Dashboard</title></head>
+        <body style="background: #000; color: #00d2ff; font-family: Arial; padding: 20px;">
+            <h1>Admin Dashboard - Messages</h1>
+            <table border="1" style="color: white;">
+                <tr><th>Name</th><th>Email</th><th>Message</th></tr>
+        '''
+        for row in rows:
+            html += f"<tr><td>{row.get('name')}</td><td>{row.get('email')}</td><td>{row.get('message')}</td></tr>"
+        html += '</table><br><a href="/admin/logout" style="color: #00d2ff;">Logout</a></body></html>'
+        return html
+    except Exception as e:
+        return f"<h1>Error: {e}</h1><a href='/admin/logout'>Logout</a>"
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('logged_in', None)
+    return redirect('/admin')
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
