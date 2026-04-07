@@ -132,7 +132,7 @@ def admin_login():
     username = request.form.get('username')
     password = request.form.get('password')
     # Simple auth - change these in production
-    if username == 'admin' and password == 'password':
+    if username == 'Abhishek' and password == 'Abhishek@2007':
         session['logged_in'] = True
         return redirect('/admin/dashboard')
     return '<h1>Invalid credentials</h1><a href="/admin">Try again</a>'
