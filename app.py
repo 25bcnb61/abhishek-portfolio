@@ -115,14 +115,17 @@ def admin():
         return redirect('/admin/dashboard')
     return '''
     <html>
-    <head><title>Admin Login</title></head>
-    <body style="background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
-        <form method="POST" action="/admin/login" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
-            <h2>Admin Login</h2>
-            <input type="text" name="username" placeholder="Username" required style="display: block; margin: 10px 0; padding: 10px; width: 200px;"><br>
-            <input type="password" name="password" placeholder="Password" required style="display: block; margin: 10px 0; padding: 10px; width: 200px;"><br>
-            <button type="submit" style="padding: 10px 20px; background: #00d2ff; color: white; border: none; border-radius: 5px;">Login</button>
-        </form>
+    <head><title>Admin Access Portal</title></head>
+    <body style="background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+        <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 50px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2); text-align: center; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+            <h1 style="color: #00d2ff; text-shadow: 0 0 10px #00d2ff;">ADMIN ACCESS PORTAL</h1>
+            <p>Enter credentials to access the control matrix</p>
+            <form method="POST" action="/admin/login">
+                <input type="text" name="username" placeholder="USERNAME" required style="display: block; margin: 15px auto; padding: 15px; width: 250px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; color: white; font-size: 16px;"><br>
+                <input type="password" name="password" placeholder="PASSWORD" required style="display: block; margin: 15px auto; padding: 15px; width: 250px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; color: white; font-size: 16px;"><br>
+                <button type="submit" style="padding: 15px 30px; background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%); color: white; border: none; border-radius: 50px; font-weight: bold; font-size: 16px; cursor: pointer;">ACCESS SYSTEM</button>
+            </form>
+        </div>
     </body>
     </html>
     '''
@@ -142,23 +145,38 @@ def admin_dashboard():
     if 'logged_in' not in session:
         return redirect('/admin')
     if messages_col is None:
-        return "<h1>DATABASE_NOT_AVAILABLE</h1><p>Cannot access messages.</p><a href='/admin/logout'>Logout</a>"
+        return "<body style='background:#000; color:#ff6b6b; padding:50px;'><h1>DATABASE_NOT_AVAILABLE</h1><p>Cannot access messages.</p><a href='/admin/logout' style='color:#00d2ff;'>Logout</a></body>"
     try:
         rows = list(messages_col.find())
         html = '''
         <html>
-        <head><title>Admin Dashboard</title></head>
-        <body style="background: #000; color: #00d2ff; font-family: Arial; padding: 20px;">
-            <h1>Admin Dashboard - Messages</h1>
-            <table border="1" style="color: white;">
-                <tr><th>Name</th><th>Email</th><th>Message</th></tr>
+        <head><title>Admin Control Matrix</title></head>
+        <body style="background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; font-family: 'Segoe UI', sans-serif; padding: 40px; display: flex; flex-direction: column; align-items: center;">
+            <div style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.18); padding: 30px; width: 90%; max-width: 1200px;">
+                <h1 style="text-align: center; letter-spacing: 4px; color: #00d2ff; text-shadow: 0 0 10px #00d2ff;">🛰️ ADMIN CONTROL MATRIX</h1>
+                <p style="text-align: center; color: #ccc;">Monitor incoming transmissions from the contact interface</p>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <tr style="color: #00d2ff; border-bottom: 2px solid rgba(0, 210, 255, 0.3);">
+                        <th style="padding: 15px; text-align: left;">NAME</th>
+                        <th style="padding: 15px; text-align: left;">IDENTITY_EMAIL</th>
+                        <th style="padding: 15px; text-align: left;">TRANSMISSION</th>
+                    </tr>
         '''
         for row in rows:
-            html += f"<tr><td>{row.get('name')}</td><td>{row.get('email')}</td><td>{row.get('message')}</td></tr>"
-        html += '</table><br><a href="/admin/logout" style="color: #00d2ff;">Logout</a></body></html>'
+            html += f"<tr style='border-bottom: 1px solid rgba(255, 255, 255, 0.1);'><td style='padding: 15px;'>{row.get('name')}</td><td style='padding: 15px;'>{row.get('email')}</td><td style='padding: 15px;'>{row.get('message')}</td></tr>"
+        html += f'''
+                </table>
+                <center style="margin-top: 30px;">
+                    <a href="/" style="display: inline-block; padding: 12px 25px; background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%); color: white; text-decoration: none; border-radius: 50px; font-weight: bold; margin-right: 10px;">RETURN TO INTERFACE</a>
+                    <a href="/admin/logout" style="display: inline-block; padding: 12px 25px; background: rgba(255,255,255,0.1); color: #00d2ff; text-decoration: none; border-radius: 50px; font-weight: bold; border: 1px solid #00d2ff;">LOGOUT</a>
+                </center>
+            </div>
+        </body>
+        </html>
+        '''
         return html
     except Exception as e:
-        return f"<h1>Error: {e}</h1><a href='/admin/logout'>Logout</a>"
+        return f"<body style='background:#000; color:red; padding:50px;'><h1>SYSTEM_ERROR: {e}</h1><a href='/admin/logout' style='color:#00d2ff;'>Logout</a></body>"
 
 @app.route('/admin/logout')
 def admin_logout():
