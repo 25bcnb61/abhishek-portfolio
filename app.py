@@ -1,9 +1,12 @@
 import os
 from flask import Flask, render_template, request, redirect
 from pymongo import MongoClient
-from dotenv import load_dotenv
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not installed, skip loading .env
 
 
 app = Flask(__name__)
